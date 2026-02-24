@@ -147,7 +147,7 @@ def server_error(e):
 if __name__ == "__main__":
     # Enable debug mode for development
     debug_mode = os.environ.get('FLASK_DEBUG', 'true').lower() == 'true'
-    port = int(os.environ.get('PORT', 5000))
+    port = int(os.environ.get('PORT', 5001))
 
     print("=" * 60)
     print("🚀 Revit Journal Analyzer - Server Starting")
@@ -155,7 +155,7 @@ if __name__ == "__main__":
     print(f"📊 Patterns loaded: {len(parser.patterns)}")
     print(f"\n🌐 Access the application at:")
     print(f"   • Local:   http://localhost:{port}")
-    print(f"   • Network: http://10.10.40.170:{port}")
+    print(f"   • Network: http://10.10.40.201:{port}")
     print(f"\n⚠️  Make sure Windows Firewall allows port {port}")
     print("=" * 60)
 
