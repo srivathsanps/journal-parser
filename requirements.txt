@@ -1,0 +1,11 @@
+# Revit Journal Analyzer - Python Dependencies
+
+# Web Framework
+Flask>=2.3.0
+
+# PDF Generation
+reportlab>=4.0.0
+
+# Optional: For production deployment
+gunicorn>=21.0.0;platform_system!="Windows"
+waitress>=2.1.0;platform_system=="Windows"

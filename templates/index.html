@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Revit Journal Analyzer</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+
+<body>
+    <div class="app-container">
+        <!-- Header -->
+        <header class="header">
+            <div class="header-content">
+                <div class="logo">
+                    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                        <polyline points="14 2 14 8 20 8" />
+                        <line x1="16" y1="13" x2="8" y2="13" />
+                        <line x1="16" y1="17" x2="8" y2="17" />
+                        <polyline points="10 9 9 9 8 9" />
+                    </svg>
+                    <h1>Revit Journal Analyzer</h1>
+                </div>
+                <p class="tagline">Upload a Revit journal file for instant crash diagnosis and analysis</p>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Upload Section -->
+            <section id="upload-section" class="upload-section">
+                <div id="drop-area" class="drop-area">
+                    <div class="drop-icon">
+                        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="1.5">
+                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                            <polyline points="17 8 12 3 7 8" />
+                            <line x1="12" y1="3" x2="12" y2="15" />
+                        </svg>
+                    </div>
+                    <p class="drop-text">Drop your Journal file here</p>
+                    <span class="drop-hint">or click to select file (.txt, .log)</span>
+                    <input type="file" id="fileInput" accept=".txt,.log,.journal" hidden>
+                </div>
+
+                <div id="file-info" class="file-info hidden">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                        <polyline points="14 2 14 8 20 8" />
+                    </svg>
+                    <span id="file-name"></span>
+                    <button id="clear-file" class="btn-icon" title="Clear file">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2">
+                            <line x1="18" y1="6" x2="6" y2="18" />
+                            <line x1="6" y1="6" x2="18" y2="18" />
+                        </svg>
+                    </button>
+                </div>
+
+                <button id="analyzeBtn" class="btn-primary">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="11" cy="11" r="8" />
+                        <line x1="21" y1="21" x2="16.65" y2="16.65" />
+                    </svg>
+                    Analyze Journal
+                </button>
+
+                <div id="loading" class="loading hidden">
+                    <div class="progress-wrapper">
+                        <div class="loading-spinner">
+                            <div class="spinner-circle"></div>
+                        </div>
+                        <div class="progress-container">
+                            <div class="progress-bar">
+                                <div id="progress-fill" class="progress-fill"></div>
+                            </div>
+                            <div class="progress-info">
+                                <span id="progress-text">Uploading...</span>
+                                <span id="progress-percent">0%</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="error-message" class="error-message hidden"></div>
+            </section>
+
+            <!-- Results Section -->
+            <section id="results-section" class="results-section hidden">
+                <!-- Actions Bar -->
+                <div class="actions-bar">
+                    <button id="newAnalysisBtn" class="btn-secondary">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2">
+                            <line x1="12" y1="5" x2="12" y2="19" />
+                            <line x1="5" y1="12" x2="19" y2="12" />
+                        </svg>
+                        New Analysis
+                    </button>
+                    <button id="downloadPdfBtn" class="btn-primary">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2">
+                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                            <polyline points="7 10 12 15 17 10" />
+                            <line x1="12" y1="15" x2="12" y2="3" />
+                        </svg>
+                        Download PDF Report
+                    </button>
+                </div>
+
+                <!-- Crash Banner -->
+                <div id="crash-banner" class="crash-banner hidden">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="10" />
+                        <line x1="12" y1="8" x2="12" y2="12" />
+                        <line x1="12" y1="16" x2="12.01" y2="16" />
+                    </svg>
+                    <span>CRASH DETECTED - Fatal error found in journal</span>
+                </div>
+
+                <!-- Summary Cards -->
+                <div class="summary-grid" id="summary-grid">
+                    <!-- Cards will be inserted by JavaScript -->
+                </div>
+
+                <!-- Tabs Navigation -->
+                <div class="tabs-container">
+                    <div class="tabs" role="tablist">
+                        <button class="tab active" data-tab="session" role="tab">Session Info</button>
+                        <button class="tab" data-tab="issues" role="tab">Issues & Errors</button>
+                        <button class="tab" data-tab="timeline" role="tab">Timeline</button>
+                        <button class="tab" data-tab="addins" role="tab">Add-ins</button>
+                        <button class="tab" data-tab="workflow" role="tab">Workflow</button>
+                        <button class="tab" data-tab="kb" role="tab">KB Articles</button>
+                    </div>
+                </div>
+
+                <!-- Tab Content -->
+                <div class="tab-panels">
+                    <!-- Session Info Panel -->
+                    <div id="panel-session" class="tab-panel active" role="tabpanel">
+                        <div class="panel-content">
+                            <h3>Session Information</h3>
+                            <div class="info-grid" id="session-info-grid">
+                                <!-- Session info will be inserted by JavaScript -->
+                            </div>
+
+                            <!-- Model Details Section -->
+                            <details id="model-details-section" class="models-section hidden">
+                                <summary class="section-summary">
+                                    <h4>📁 Model Details</h4>
+                                </summary>
+                                <div class="section-content">
+                                    <!-- Primary Model -->
+                                    <div id="primary-model-section" class="hidden">
+                                        <h5>Primary Model</h5>
+                                        <div id="primary-model-display" class="primary-model-display"></div>
+                                    </div>
+
+                                    <!-- All Models Opened -->
+                                    <div id="models-list" class="hidden">
+                                        <h5>All Models Opened</h5>
+                                        <ul id="models-ul"></ul>
+                                    </div>
+
+                                    <!-- Linked Models -->
+                                    <div id="linked-models-section" class="hidden">
+                                        <h5>Linked Models</h5>
+                                        <div id="linked-models-list" class="linked-models-list"></div>
+                                    </div>
+                                </div>
+                            </details>
+
+                            <!-- Views & Sheets Section -->
+                            <details id="views-sheets-section" class="models-section hidden">
+                                <summary class="section-summary">
+                                    <h4>👁️ Views & Sheets</h4>
+                                </summary>
+                                <div class="section-content">
+                                    <!-- Views -->
+                                    <div id="views-list-section" class="hidden">
+                                        <h5>Views <span id="views-count-badge" class="badge">0</span></h5>
+                                        <ul id="views-ul" class="views-sheets-list"></ul>
+                                    </div>
+
+                                    <!-- Sheets -->
+                                    <div id="sheets-list-section" class="hidden">
+                                        <h5>Sheets <span id="sheets-count-badge" class="badge">0</span></h5>
+                                        <ul id="sheets-ul" class="views-sheets-list"></ul>
+                                    </div>
+                                </div>
+                            </details>
+
+                            <!-- Unsaved Work Actions Section -->
+                            <div id="unsaved-work-section" class="models-section hidden">
+                                <h4>Unsaved Work Actions <span id="unsaved-actions-count" class="badge">0</span></h4>
+                                <p class="unsaved-work-info">
+                                    <strong>Duration:</strong> <span id="unsaved-duration-display">N/A</span><br>
+                                    <strong>Last Saved:</strong> <span id="last-save-time-display">N/A</span>
+                                </p>
+                                <details class="unsaved-actions-dropdown">
+                                    <summary class="unsaved-actions-summary">View Actions During Unsaved Period
+                                    </summary>
+                                    <div id="unsaved-actions-list" class="unsaved-actions-list"></div>
+                                </details>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Issues Panel -->
+                    <div id="panel-issues" class="tab-panel" role="tabpanel">
+                        <div class="panel-content">
+                            <h3>Issues and Errors</h3>
+
+                            <div class="issues-tabs">
+                                <button class="issue-tab active" data-issue="fatal">
+                                    Fatal <span id="fatal-count" class="badge badge-critical">0</span>
+                                </button>
+                                <button class="issue-tab" data-issue="errors">
+                                    Errors <span id="errors-count" class="badge badge-error">0</span>
+                                </button>
+                                <button class="issue-tab" data-issue="warnings">
+                                    Warnings <span id="warnings-count" class="badge badge-warning">0</span>
+                                </button>
+                                <button class="issue-tab" data-issue="exceptions">
+                                    Exceptions <span id="exceptions-count" class="badge">0</span>
+                                </button>
+                            </div>
+
+                            <div class="issues-content">
+                                <div id="issues-fatal" class="issue-list active"></div>
+                                <div id="issues-errors" class="issue-list"></div>
+                                <div id="issues-warnings" class="issue-list"></div>
+                                <div id="issues-exceptions" class="issue-list"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Timeline Panel -->
+                    <div id="panel-timeline" class="tab-panel" role="tabpanel">
+                        <div class="panel-content">
+                            <h3>Session Timeline</h3>
+                            <div id="timeline-container" class="timeline-container"></div>
+                        </div>
+                    </div>
+
+                    <!-- Add-ins Panel -->
+                    <div id="panel-addins" class="tab-panel" role="tabpanel">
+                        <div class="panel-content">
+                            <h3>Add-ins</h3>
+                            <div class="addins-grid">
+                                <div class="addin-section">
+                                    <h4>
+                                        <span class="status-dot status-error"></span>
+                                        Failed Add-ins
+                                        <span id="failed-addins-count" class="badge badge-critical">0</span>
+                                    </h4>
+                                    <ul id="failed-addins-list"></ul>
+                                </div>
+                                <div class="addin-section">
+                                    <h4>
+                                        <span class="status-dot status-warning"></span>
+                                        Third-Party Add-ins
+                                        <span id="thirdparty-addins-count" class="badge">0</span>
+                                    </h4>
+                                    <ul id="thirdparty-addins-list"></ul>
+                                </div>
+                                <div class="addin-section">
+                                    <h4>
+                                        <span class="status-dot status-success"></span>
+                                        Autodesk Add-ins
+                                        <span id="autodesk-addins-count" class="badge">0</span>
+                                    </h4>
+                                    <ul id="autodesk-addins-list"></ul>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Workflow Panel -->
+                    <div id="panel-workflow" class="tab-panel" role="tabpanel">
+                        <div class="panel-content">
+                            <!-- Longest Delays Section (TOP) -->
+                            <div class="workflow-section" style="margin-bottom: 2rem;">
+                                <h3>⏱️ Longest Delays</h3>
+                                <p style="color: #6b7280; margin-bottom: 1rem;">Significant delays (>5 seconds) between
+                                    consecutive events</p>
+                                <ul id="longest-delays-list" class="workflow-list"></ul>
+                            </div>
+
+                            <!-- Workflow Events Section (BELOW) -->
+                            <div>
+                                <h3>📋 Workflow Events</h3>
+                                <div class="workflow-grid">
+                                    <div class="workflow-section">
+                                        <h4>Sync Operations</h4>
+                                        <ul id="sync-ops-list" class="workflow-list"></ul>
+                                    </div>
+                                    <div class="workflow-section">
+                                        <h4>File Operations</h4>
+                                        <ul id="file-ops-list" class="workflow-list"></ul>
+                                    </div>
+                                    <div class="workflow-section">
+                                        <h4>Link Operations</h4>
+                                        <ul id="link-ops-list" class="workflow-list"></ul>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- KB Articles Panel -->
+                    <div id="panel-kb" class="tab-panel" role="tabpanel">
+                        <div class="panel-content">
+                            <h3>Known Issues & KB Articles</h3>
+                            <p class="kb-description">
+                                These known issues were detected in your journal file.
+                                Click the links for official Autodesk solutions.
+                            </p>
+                            <div id="kb-articles-container" class="kb-articles-container"></div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </main>
+
+        <!-- Footer -->
+        <footer class="footer">
+            <p>Revit Journal Analyzer - For crash diagnosis and troubleshooting</p>
+        </footer>
+    </div>
+
+    <script src="{{ url_for('static', filename='script.js') }}"></script>
+</body>
+
+</html>
