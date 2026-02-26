@@ -2235,3 +2235,27 @@ body {
 button:focus-visible {
     box-shadow: 0 0 0 3px var(--color-primary-glow);
 }
+/* =========================
+   Logo Fix - No Layout Change
+========================= */
+
+/* Ensure header aligns properly */
+.header-content {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+/* Right section for logo */
+.header-right {
+    display: flex;
+    align-items: center;
+}
+
+/* Logo sizing and stability */
+.zestine-logo {
+    height: 55px;      /* Adjust if needed */
+    width: auto;
+    object-fit: contain;
+    display: block;
+}
