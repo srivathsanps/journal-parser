@@ -514,39 +514,28 @@ function renderSessionInfo(session, fullData) {
     console.log('Models opened:', session.models_opened);
     console.log('Primary model:', session.primary_model);
 
-    if (session.models_opened && session.models_opened.length > 0) {
-        modelsSection.classList.remove('hidden');
+    // Filter to only .rvt files
+    const rvtModels = (session.models_opened || []).filter(m => m.toLowerCase().endsWith('.rvt'));
 
-        // Get timeline data from fullData parameter
-        const timeline = fullData?.timeline || [];
-        console.log('Timeline data for models:', timeline);
+    if (rvtModels.length > 0) {
+        modelsSection.classList.remove('hidden');
 
         // Sort models: primary model first, then others
         const primaryModel = session.primary_model;
         const sortedModels = [];
 
-        // Add primary model first if it exists
-        if (primaryModel && session.models_opened.includes(primaryModel)) {
+        if (primaryModel && rvtModels.includes(primaryModel)) {
             sortedModels.push(primaryModel);
         }
 
-        // Add other models
-        session.models_opened.forEach(model => {
+        rvtModels.forEach(model => {
             if (model !== primaryModel) {
                 sortedModels.push(model);
             }
         });
 
-        console.log('Sorted models:', sortedModels);
-
         modelsUl.innerHTML = sortedModels.map(modelName => {
-            const isPrimary = modelName === primaryModel;
-
-            // Add primary model badge for better visibility
-            const primaryBadge = isPrimary ? '<span style="background: #3b82f6; color: white; padding: 2px 8px; border-radius: 4px; font-size: 0.75em; margin-left: 8px; font-weight: bold;">PRIMARY</span>' : '';
-
-            // Clean display: just model name and badge
-            return `<li style="margin-bottom: 0.5rem; ${isPrimary ? 'font-weight: 600;' : ''}">${escapeHtml(modelName)}${primaryBadge}</li>`;
+            return `<li>${escapeHtml(modelName)}</li>`;
         }).join('');
     } else {
         modelsSection.classList.add('hidden');
@@ -678,14 +667,27 @@ function renderSessionInfo(session, fullData) {
 // Issues & Errors
 // ======================
 
+function deduplicateItems(items) {
+    if (!items) return [];
+    const seen = new Map();
+    items.forEach(item => {
+        const text = item.text.trim();
+        const existing = seen.get(text);
+        if (!existing || item.line > existing.line) {
+            seen.set(text, item);
+        }
+    });
+    return Array.from(seen.values());
+}
+
 function renderIssues(errors) {
     if (!errors) return;
 
-    // Update counts
-    document.getElementById('fatal-count').textContent = errors.fatal?.length || 0;
-    document.getElementById('errors-count').textContent = errors.errors?.length || 0;
-    document.getElementById('warnings-count').textContent = errors.warnings?.length || 0;
-    document.getElementById('exceptions-count').textContent = errors.exceptions?.length || 0;
+    // Update counts with deduplicated totals
+    document.getElementById('fatal-count').textContent = deduplicateItems(errors.fatal).length;
+    document.getElementById('errors-count').textContent = deduplicateItems(errors.errors).length;
+    document.getElementById('warnings-count').textContent = deduplicateItems(errors.warnings).length;
+    document.getElementById('exceptions-count').textContent = deduplicateItems(errors.exceptions).length;
 
     // Render lists
     renderIssueList('issues-fatal', errors.fatal, 'critical');
@@ -702,8 +704,19 @@ function renderIssueList(containerId, items, severity) {
         return;
     }
 
+    // Deduplicate by text content, keeping the latest (highest) line number
+    const seen = new Map();
+    items.forEach(item => {
+        const text = item.text.trim();
+        const existing = seen.get(text);
+        if (!existing || item.line > existing.line) {
+            seen.set(text, item);
+        }
+    });
+    const uniqueItems = Array.from(seen.values());
+
     const maxItems = 100;
-    const displayItems = items.slice(0, maxItems);
+    const displayItems = uniqueItems.slice(0, maxItems);
 
     container.innerHTML = displayItems.map(item => `
         <div class="issue-item issue-${severity}">
@@ -712,8 +725,8 @@ function renderIssueList(containerId, items, severity) {
         </div>
     `).join('');
 
-    if (items.length > maxItems) {
-        container.innerHTML += `<p class="more-items">... and ${items.length - maxItems} more</p>`;
+    if (uniqueItems.length > maxItems) {
+        container.innerHTML += `<p class="more-items">... and ${uniqueItems.length - maxItems} more</p>`;
     }
 }
 
