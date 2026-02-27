@@ -199,7 +199,12 @@
             margin-right: auto;
         }
 
-        /* ===== SUMMARY GRID - MATCHING JS EXPECTATIONS WITH YOUR DESIGN ===== */
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.02); }
+        }
+
+        /* ===== SUMMARY GRID ===== */
         .summary-grid {
             display: grid;
             grid-template-columns: repeat(5, 1fr);
@@ -348,6 +353,11 @@
             width: 70px;
             height: 70px;
             animation: float 3s ease-in-out infinite;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
         }
 
         .drop-text {
@@ -720,7 +730,7 @@
             color: #48bb78;
         }
 
-        /* ===== MODELS SECTION ===== */
+        /* ===== MODELS SECTION - FIXED ===== */
         .models-section {
             margin-top: 1.5rem;
             border: 1px solid #e9efff;
@@ -737,10 +747,17 @@
             color: #667eea;
             font-size: 0.95rem;
             transition: all 0.3s;
+            list-style: none;
         }
 
         .section-summary:hover {
             background: #e9efff;
+        }
+
+        .section-summary h4 {
+            display: inline;
+            font-size: 0.95rem;
+            color: #667eea;
         }
 
         .section-content {
@@ -748,28 +765,82 @@
             border-top: 1px solid #e9efff;
         }
 
+        /* Primary Model Display */
+        .primary-model-display {
+            margin-bottom: 1.5rem;
+        }
+
+        .primary-model-card {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 1rem 1.25rem;
+            background: #f0f7ff;
+            border: 1px solid #667eea;
+            border-radius: 12px;
+        }
+
+        .primary-model-card svg {
+            stroke: #667eea;
+            width: 20px;
+            height: 20px;
+            flex-shrink: 0;
+        }
+
+        .primary-model-card .model-name {
+            font-size: 0.9rem;
+            font-weight: 500;
+            color: #1e293b;
+            word-break: break-all;
+            font-family: 'Monaco', 'JetBrains Mono', monospace;
+            line-height: 1.5;
+        }
+
+        /* Models List */
+        .models-section h5 {
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: #475569;
+            margin-bottom: 0.75rem;
+        }
+
         .models-section ul {
             list-style: none;
             display: flex;
-            flex-wrap: wrap;
-            gap: 0.6rem;
+            flex-direction: column;
+            gap: 0.5rem;
+            padding: 0;
         }
 
         .models-section li {
-            padding: 0.4rem 1rem;
+            padding: 0.75rem 1rem;
             background: #f8faff;
-            border-radius: 30px;
-            font-size: 0.9rem;
-            color: #1e1e2f;
-            font-weight: 500;
+            border-radius: 8px;
+            font-size: 0.85rem;
+            color: #1e293b;
             border: 1px solid #e9efff;
-            transition: all 0.2s;
+            font-family: 'Monaco', 'JetBrains Mono', monospace;
+            word-break: break-all;
+            line-height: 1.5;
         }
 
-        .models-section li:hover {
-            border-color: #667eea;
+        .models-section li strong {
             color: #667eea;
-            transform: scale(1.03);
+            font-weight: 600;
+        }
+
+        /* PRIMARY badge */
+        .primary-badge {
+            display: inline-block;
+            background: #667eea;
+            color: white;
+            padding: 0.15rem 0.6rem;
+            border-radius: 12px;
+            font-size: 0.7rem;
+            font-weight: 600;
+            margin-left: 0.5rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
         }
 
         /* ===== BADGES ===== */
@@ -1274,6 +1345,165 @@
             stroke: white;
         }
 
+        /* ===== UNSAVED WORK ACTIONS - FIXED ===== */
+        #unsaved-work-section {
+            margin-top: 1.5rem;
+            border: 1px solid #e9efff;
+            border-radius: 18px;
+            overflow: hidden;
+            background: white;
+        }
+
+        #unsaved-work-section h4 {
+            padding: 1rem 1.5rem;
+            background: #f8faff;
+            font-size: 0.95rem;
+            font-weight: 600;
+            color: #667eea;
+            margin: 0;
+            border-bottom: 1px solid #e9efff;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        #unsaved-work-section .badge {
+            background: #667eea;
+            color: white;
+            border: none;
+            font-size: 0.7rem;
+            padding: 0.2rem 0.6rem;
+            border-radius: 20px;
+        }
+
+        .unsaved-work-info {
+            padding: 1rem 1.5rem;
+            background: #ffffff;
+            border-bottom: 1px solid #e9efff;
+            margin: 0;
+        }
+
+        .unsaved-work-info strong {
+            color: #475569;
+            font-weight: 600;
+            display: inline-block;
+            min-width: 80px;
+            font-size: 0.9rem;
+        }
+
+        .unsaved-work-info span {
+            color: #1e293b;
+            font-weight: 500;
+            font-size: 0.9rem;
+            font-family: 'Monaco', 'JetBrains Mono', monospace;
+        }
+
+        .unsaved-actions-dropdown {
+            border: none;
+            border-top: 1px solid #e9efff;
+        }
+
+        .unsaved-actions-summary {
+            padding: 1rem 1.5rem;
+            background: #f8faff;
+            cursor: pointer;
+            font-weight: 600;
+            color: #667eea;
+            font-size: 0.9rem;
+            list-style: none;
+            transition: all 0.2s;
+        }
+
+        .unsaved-actions-summary:hover {
+            background: #e9efff;
+        }
+
+        .unsaved-actions-summary::-webkit-details-marker {
+            display: none;
+        }
+
+        .unsaved-actions-summary::before {
+            content: '▶';
+            display: inline-block;
+            margin-right: 0.5rem;
+            font-size: 0.8rem;
+            color: #667eea;
+            transition: transform 0.2s;
+        }
+
+        details[open] .unsaved-actions-summary::before {
+            transform: rotate(90deg);
+        }
+
+        .unsaved-actions-list {
+            padding: 0.5rem 0;
+            background: white;
+        }
+
+        .unsaved-action-item {
+            padding: 1rem 1.5rem;
+            border-bottom: 1px solid #f1f5f9;
+        }
+
+        .unsaved-action-item:last-child {
+            border-bottom: none;
+        }
+
+        .action-header {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            margin-bottom: 0.5rem;
+            flex-wrap: wrap;
+        }
+
+        .action-number {
+            display: inline-block;
+            background: #667eea;
+            color: white;
+            padding: 0.2rem 0.8rem;
+            border-radius: 16px;
+            font-size: 0.7rem;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+        }
+
+        .action-category {
+            display: inline-block;
+            background: #e2e8f0;
+            color: #475569;
+            padding: 0.2rem 0.8rem;
+            border-radius: 16px;
+            font-size: 0.7rem;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .action-timestamp {
+            margin-left: auto;
+            font-size: 0.7rem;
+            color: #94a3b8;
+            font-family: 'Monaco', 'JetBrains Mono', monospace;
+        }
+
+        .action-detail {
+            font-size: 0.9rem;
+            color: #0f172a;
+            font-weight: 500;
+            margin-bottom: 0.25rem;
+            font-family: 'Monaco', 'JetBrains Mono', monospace;
+            word-break: break-all;
+            line-height: 1.5;
+            padding-left: 2rem;
+        }
+
+        .action-line {
+            font-size: 0.75rem;
+            color: #64748b;
+            font-family: 'Monaco', 'JetBrains Mono', monospace;
+            padding-left: 2rem;
+        }
+
         /* ===== FOOTER ===== */
         .footer {
             text-align: center;
@@ -1370,6 +1600,21 @@
             
             .summary-grid {
                 grid-template-columns: repeat(2, 1fr);
+            }
+            
+            .action-header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 0.5rem;
+            }
+            
+            .action-timestamp {
+                margin-left: 0;
+            }
+            
+            .action-detail,
+            .action-line {
+                padding-left: 0;
             }
         }
 
@@ -1508,7 +1753,7 @@
                     <span>CRASH DETECTED - Fatal error found in journal</span>
                 </div>
 
-                <!-- SUMMARY CARDS - Using grid layout that JS expects -->
+                <!-- SUMMARY CARDS -->
                 <div class="summary-grid" id="summary-grid">
                     <!-- Cards will be populated by JavaScript -->
                 </div>
@@ -1606,6 +1851,18 @@
                                     </details>
                                 </div>
                             </details>
+                            <!-- Unsaved Work Actions Section - FIXED -->
+                            <div id="unsaved-work-section" class="models-section hidden">
+                                <h4>Unsaved Work Actions <span id="unsaved-actions-count" class="badge">0</span></h4>
+                                <p class="unsaved-work-info">
+                                    <strong>Duration:</strong> <span id="unsaved-duration-display">N/A</span><br>
+                                    <strong>Last Saved:</strong> <span id="last-save-time-display">N/A</span>
+                                </p>
+                                <details class="unsaved-actions-dropdown">
+                                    <summary class="unsaved-actions-summary">View Actions During Unsaved Period</summary>
+                                    <div id="unsaved-actions-list" class="unsaved-actions-list"></div>
+                                </details>
+                            </div>
                         </div>
                     </div>
 
