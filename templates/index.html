@@ -105,7 +105,7 @@
                             <line x1="12" y1="5" x2="12" y2="19" />
                             <line x1="5" y1="12" x2="19" y2="12" />
                         </svg>
-                        New Analysis
+                        Start New Analysis...
                     </button>
                     <button id="downloadPdfBtn" class="btn-primary">
                         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
@@ -114,7 +114,7 @@
                             <polyline points="7 10 12 15 17 10" />
                             <line x1="12" y1="15" x2="12" y2="3" />
                         </svg>
-                        Download PDF Report
+                        Export Analysis Report...
                     </button>
                 </div>
 
@@ -136,23 +136,23 @@
                 <!-- Tabs Navigation -->
                 <div class="tabs-container">
                     <div class="tabs" role="tablist">
-                        <button class="tab active" data-tab="session" role="tab">Session Info</button>
-                        <button class="tab" data-tab="issues" role="tab">Issues & Errors</button>
-                        <button class="tab" data-tab="timeline" role="tab">Timeline</button>
-                        <button class="tab" data-tab="addins" role="tab">Add-ins</button>
-                        <button class="tab" data-tab="workflow" role="tab">Workflow</button>
-                        <button class="tab" data-tab="kb" role="tab">KB Articles</button>
+                        <button class="tab active" data-tab="session" role="tab">Session Overview</button>
+                        <button class="tab" data-tab="issues" role="tab">Fault Log</button>
+                        <button class="tab" data-tab="timeline" role="tab">Event Log</button>
+                        <button class="tab" data-tab="addins" role="tab">Extension Hub</button>
+                        <button class="tab" data-tab="workflow" role="tab">Operation Analysis</button>
+                        <button class="tab" data-tab="kb" role="tab">Solution Library</button>
                     </div>
                 </div>
 
                 <!-- Tab Content -->
                 <div class="tab-panels">
-                    <!-- Session Info Panel -->
+                    <!-- Session Overview Panel -->
                     <div id="panel-session" class="tab-panel active" role="tabpanel">
                         <div class="panel-content">
-                            <h3>Session Information</h3>
+                            <h3>Environment Summary</h3>
                             <div class="info-grid" id="session-info-grid">
-                                <!-- Session info will be inserted by JavaScript -->
+                                <!-- Session Overview will be inserted by JavaScript -->
                             </div>
 
                             <!-- Model Details Section -->
@@ -184,43 +184,55 @@
                             <!-- Views & Sheets Section -->
                             <details id="views-sheets-section" class="models-section hidden">
                                 <summary class="section-summary">
-                                    <h4>👁️ Views & Sheets</h4>
+                                    <h4>👁️ Views &amp; Sheets <span id="views-sheets-total" class="badge hidden">0</span></h4>
                                 </summary>
                                 <div class="section-content">
                                     <!-- Views -->
                                     <div id="views-list-section" class="hidden">
-                                        <h5>Views <span id="views-count-badge" class="badge">0</span></h5>
+                                        <div class="vs-stat-row">
+                                            <span class="vs-label">No. of Views</span>
+                                            <span id="views-count-badge" class="badge">0</span>
+                                        </div>
+                                        <h5>View Names</h5>
                                         <ul id="views-ul" class="views-sheets-list"></ul>
                                     </div>
 
                                     <!-- Sheets -->
                                     <div id="sheets-list-section" class="hidden">
-                                        <h5>Sheets <span id="sheets-count-badge" class="badge">0</span></h5>
+                                        <div class="vs-stat-row">
+                                            <span class="vs-label">No. of Sheets</span>
+                                            <span id="sheets-count-badge" class="badge">0</span>
+                                        </div>
+                                        <h5>Sheet Names</h5>
                                         <ul id="sheets-ul" class="views-sheets-list"></ul>
                                     </div>
                                 </div>
                             </details>
 
-                            <!-- Unsaved Work Actions Section -->
-                            <div id="unsaved-work-section" class="models-section hidden">
-                                <h4>Unsaved Work Actions <span id="unsaved-actions-count" class="badge">0</span></h4>
-                                <p class="unsaved-work-info">
-                                    <strong>Duration:</strong> <span id="unsaved-duration-display">N/A</span><br>
-                                    <strong>Last Saved:</strong> <span id="last-save-time-display">N/A</span>
-                                </p>
-                                <details class="unsaved-actions-dropdown">
-                                    <summary class="unsaved-actions-summary">View Actions During Unsaved Period
-                                    </summary>
-                                    <div id="unsaved-actions-list" class="unsaved-actions-list"></div>
-                                </details>
-                            </div>
+                            <!--  Unsaved Actions Section -->
+                            <details id="unsaved-work-section" class="models-section hidden">
+                                <summary class="section-summary">
+                                    <h4>Unsaved Actions <span id="unsaved-actions-count" class="badge">0</span></h4>
+                                </summary>
+                                <div class="section-content">
+                                    <p class="unsaved-work-info">
+                                        <strong>Duration:</strong> <span id="unsaved-duration-display">N/A</span><br>
+                                        <strong>Last Saved:</strong> <span id="last-save-time-display">N/A</span>
+                                    </p>
+                                    <details class="unsaved-actions-dropdown">
+                                        <summary class="unsaved-actions-summary">View Actions During Unsaved Period
+                                        </summary>
+                                        <div id="unsaved-actions-list" class="unsaved-actions-list"></div>
+                                    </details>
+                                </div>
+                            </details>
                         </div>
                     </div>
 
                     <!-- Issues Panel -->
                     <div id="panel-issues" class="tab-panel" role="tabpanel">
                         <div class="panel-content">
-                            <h3>Issues and Errors</h3>
+                            <h3>Diagnostics</h3>
 
                             <div class="issues-tabs">
                                 <button class="issue-tab active" data-issue="fatal">

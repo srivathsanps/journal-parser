@@ -86,7 +86,11 @@ class JournalParser:
             'session_status': 'Active',  # Active, Closed, or Crashed
             'journal_file': '',
             'unsaved_work': '',  # Time of unsaved work
-            'unsaved_work_duration': ''  # Duration of unsaved work
+            'unsaved_work_duration': '',  # Duration of unsaved work
+            'views': [],          # Unique views activated
+            'sheets': [],         # Unique sheets activated
+            'views_count': 0,
+            'sheets_count': 0
         }
 
         models = set()
@@ -150,7 +154,7 @@ class JournalParser:
         if m:
             ram_mb = int(m.group(1))
             ram_gb = round(ram_mb / 1024, 1)
-            info['ram'] = f"{ram_gb} GB ({ram_mb} MB available)"
+            info['ram'] = f"{ram_gb} GB ({ram_mb} MB)"
 
         # === GRAPHICS CARD ===
         # Best pattern: VIDEO CARD ENVIRONMENT: CARD="NVIDIA Quadro K1200"
@@ -428,6 +432,63 @@ class JournalParser:
             info['unsaved_actions'] = []
             info['unsaved_actions_count'] = 0
 
+        # === VIEWS & SHEETS ===
+        # Extract views and sheets activated during the session from Jrn.ViewActivate entries
+        # Pattern: Jrn.ViewActivate "docname" , "ViewFamilyType: Floor Plan, ViewName: Level 1"
+        # views_map: name -> {'count': N, 'type': 'Floor Plan'}
+        views_map = {}
+        sheets_map = {}
+
+        for m in re.finditer(
+            r'Jrn\.ViewActivate\s+"[^"]*"\s*,\s*"([^"]+)"',
+            content, re.IGNORECASE
+        ):
+            raw = m.group(1).strip()
+
+            # Try to extract ViewFamilyType and ViewName from structured format
+            vft_match = re.search(r'ViewFamilyType:\s*([^,]+)', raw, re.IGNORECASE)
+            vn_match = re.search(r'ViewName:\s*(.+)$', raw, re.IGNORECASE)
+
+            if vft_match and vn_match:
+                view_family_type = vft_match.group(1).strip()
+                name = vn_match.group(1).strip()
+            else:
+                # Fallback: take last comma-separated segment, strip key prefix
+                parts = raw.split(',')
+                name = re.sub(r'^[\w\s]+:\s*', '', parts[-1].strip()).strip()
+                view_family_type = ''
+
+            if not name or len(name) < 2:
+                continue
+
+            # Classify as Sheet if ViewFamilyType contains "sheet", or fallback heuristic
+            is_sheet = (
+                'sheet' in view_family_type.lower()
+                or (not view_family_type and (
+                    re.match(r'^[A-Za-z]{0,3}[\d]', name) or 'sheet' in name.lower()
+                ))
+            )
+
+            if is_sheet:
+                if name not in sheets_map:
+                    sheets_map[name] = {'count': 0, 'type': view_family_type}
+                sheets_map[name]['count'] += 1
+            else:
+                if name not in views_map:
+                    views_map[name] = {'count': 0, 'type': view_family_type}
+                views_map[name]['count'] += 1
+
+        info['views'] = [
+            {'name': k, 'count': v['count'], 'type': v['type']}
+            for k, v in sorted(views_map.items())
+        ]
+        info['sheets'] = [
+            {'name': k, 'count': v['count'], 'type': v['type']}
+            for k, v in sorted(sheets_map.items())
+        ]
+        info['views_count'] = len(views_map)
+        info['sheets_count'] = len(sheets_map)
+
         return info
 
     def _parse_timestamp(self, timestamp_str: str):
@@ -511,6 +572,49 @@ class JournalParser:
             # DBG_INFO - only if specifically DBG_INFO
             elif 'DBG_INFO' in upper:
                 errors['info'].append(entry)
+
+        # === XML PATTERN MATCHING ===
+        # Also surface lines that match the XML pattern file in the Fault Log
+        if self.patterns:
+            content = '\n'.join(lines)
+            max_patterns = min(len(self.patterns), 100)
+            for pattern in self.patterns[:max_patterns]:
+                try:
+                    if pattern['search_type'] == 'regex':
+                        regex = re.compile(pattern['text'], re.IGNORECASE | re.MULTILINE)
+                    elif pattern['search_type'] == 'escaped':
+                        escaped_text = pattern['text'].replace('\\r\\n', '\r\n').replace('\\n', '\n')
+                        regex = re.compile(re.escape(escaped_text), re.IGNORECASE)
+                    else:
+                        regex = re.compile(re.escape(pattern['text']), re.IGNORECASE)
+
+                    match_count = 0
+                    for match in regex.finditer(content):
+                        line_num = content[:match.start()].count('\n') + 1
+                        entry = {'line': line_num, 'text': match.group(0)[:200]}
+                        color = pattern.get('color', '')
+                        if color in ('red', 'darkRed'):
+                            errors['fatal'].append(entry)
+                        elif color in ('purple', 'deepPurple', 'pink', 'litePink'):
+                            errors['errors'].append(entry)
+                        else:
+                            errors['warnings'].append(entry)
+                        match_count += 1
+                        if match_count >= 5:
+                            break
+                except re.error:
+                    continue
+
+        # Deduplicate each list to avoid showing the same line twice
+        for key in errors:
+            seen = set()
+            unique = []
+            for e in errors[key]:
+                k = (e['line'], e['text'][:50])
+                if k not in seen:
+                    seen.add(k)
+                    unique.append(e)
+            errors[key] = unique
 
         return errors
 
@@ -788,17 +892,6 @@ class JournalParser:
         }
 
             # 6. Error that caused the crash - Name of the Error
-            elif ('CRASH' in line.upper() or 'FATAL' in line.upper()) and 'CRASH NOTIFY' not in line.upper():
-                # Extract error name/description from the line
-                error_text = line.strip()[:150]
-                event = {
-                    'type': 'crash',
-                    'description': f'Error: {error_text}',
-                    'timestamp': timestamp,
-                    'line': i + 1,
-                    'error_name': error_text
-                }
-            
             if event:
                 timeline.append(event)
                 events_found += 1
@@ -1041,10 +1134,11 @@ class JournalParser:
                 # Check whitelist first (highest priority)
                 if any(known in plugin_name_lower for known in AUTODESK_ADDINS):
                     is_autodesk = True
-                # Check path indicators
-                elif 'Autodesk\\Revit\\' in assembly_path and '\\AddIns\\' in assembly_path:
+                # Only Autodesk-owned paths OUTSIDE the shared AddIns folder
+                elif 'Autodesk\\Revit\\' in assembly_path and '\\AddIns\\' not in assembly_path:
                     is_autodesk = True
-                elif 'ADSK' in assembly_path or 'Autodesk' in plugin_name:
+                # ADSK in path is a reliable Autodesk vendor indicator
+                elif 'ADSK' in assembly_path:
                     is_autodesk = True
                 
                 # PyRevit and other third-party plugins go to third_party
@@ -1408,11 +1502,11 @@ class JournalParser:
             except re.error:
                 continue
 
-        # Remove duplicates and sort by severity
+        # Remove duplicates - keep only one instance per unique issue pattern
         seen = set()
         unique_matches = []
         for m in matches:
-            key = (m['pattern'], m['line'])
+            key = m['pattern']  # Deduplicate by pattern only (one reference per issue type)
             if key not in seen:
                 seen.add(key)
                 unique_matches.append(m)

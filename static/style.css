@@ -1162,6 +1162,7 @@ body {
     display: flex;
     flex-wrap: wrap;
     gap: var(--spacing-sm);
+    padding: var(--spacing-sm) 0;
 }
 
 .views-sheets-list li {
@@ -1179,6 +1180,24 @@ body {
     border-color: var(--color-primary);
     color: var(--color-primary);
     background: var(--color-primary-subtle);
+}
+
+.views-open-count {
+    font-size: 11px;
+    opacity: 0.6;
+}
+
+.vs-stat-row {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    margin-bottom: var(--spacing-xs);
+}
+
+.vs-label {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-secondary);
 }
 
 /* Badges */

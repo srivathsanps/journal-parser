@@ -326,7 +326,7 @@ async function downloadPdf() {
                 <polyline points="7 10 12 15 17 10"/>
                 <line x1="12" y1="15" x2="12" y2="3"/>
             </svg>
-            Download PDF Report
+            Export Analysis Report
         `;
     }
 }
@@ -459,8 +459,8 @@ function renderSessionInfo(session, fullData) {
         { label: 'Build Number', value: session.build_number },
         { label: 'Computer', value: session.computer_name },
         { label: 'Username', value: session.username },
-        { label: 'Operating System', value: session.operating_system },
-        { label: 'RAM', value: session.ram },
+        { label: 'OS', value: session.operating_system },
+        { label: 'Available Memory', value: session.ram },
         { label: 'Graphics Card', value: session.graphics_card },
         { label: 'Processor', value: session.processor },
         { label: 'Journal Name', value: session.journal_name },
@@ -631,39 +631,45 @@ function renderSessionInfo(session, fullData) {
     const sheetsListSection = document.getElementById('sheets-list-section');
     const viewsCountBadge = document.getElementById('views-count-badge');
     const sheetsCountBadge = document.getElementById('sheets-count-badge');
+    const viewsSheetsTotalBadge = document.getElementById('views-sheets-total');
     const viewsUl = document.getElementById('views-ul');
     const sheetsUl = document.getElementById('sheets-ul');
 
+    const hasViews = session.views && session.views.length > 0;
+    const hasSheets = session.sheets && session.sheets.length > 0;
+
     // Render views
-    if (session.views && session.views.length > 0) {
-        viewsSheetsSection.classList.remove('hidden');
+    if (hasViews) {
         viewsListSection.classList.remove('hidden');
         viewsCountBadge.textContent = session.views_count || session.views.length;
-
         viewsUl.innerHTML = session.views.map(view => {
-            const countDisplay = view.count > 1 ? ` (${view.count})` : '';
-            return `<li>${escapeHtml(view.name)}${countDisplay}</li>`;
+            const count = view.count > 1 ? ` <span class="views-open-count">(${view.count}x)</span>` : '';
+            return `<li>${escapeHtml(view.name)}${count}</li>`;
         }).join('');
     } else {
         viewsListSection.classList.add('hidden');
     }
 
     // Render sheets
-    if (session.sheets && session.sheets.length > 0) {
-        viewsSheetsSection.classList.remove('hidden');
+    if (hasSheets) {
         sheetsListSection.classList.remove('hidden');
         sheetsCountBadge.textContent = session.sheets_count || session.sheets.length;
-
         sheetsUl.innerHTML = session.sheets.map(sheet => {
-            const countDisplay = sheet.count > 1 ? ` (${sheet.count})` : '';
-            return `<li>${escapeHtml(sheet.name)}${countDisplay}</li>`;
+            const count = sheet.count > 1 ? ` <span class="views-open-count">(${sheet.count}x)</span>` : '';
+            return `<li>${escapeHtml(sheet.name)}${count}</li>`;
         }).join('');
     } else {
         sheetsListSection.classList.add('hidden');
     }
 
-    // Hide views/sheets section if both are empty
-    if ((!session.views || session.views.length === 0) && (!session.sheets || session.sheets.length === 0)) {
+    // Show/hide the whole section and update the summary total badge
+    if (hasViews || hasSheets) {
+        viewsSheetsSection.classList.remove('hidden');
+        const total = (session.views_count || (session.views ? session.views.length : 0))
+                    + (session.sheets_count || (session.sheets ? session.sheets.length : 0));
+        viewsSheetsTotalBadge.textContent = total;
+        viewsSheetsTotalBadge.classList.remove('hidden');
+    } else {
         viewsSheetsSection.classList.add('hidden');
     }
 }
@@ -995,10 +1001,14 @@ function renderKbArticles(matchedIssues) {
         return;
     }
 
-    // Reverse order - show latest (highest line number) first
-    const reversedIssues = [...kbIssues].sort((a, b) => b.line - a.line);
+    const priorityOrder = { high: 0, medium: 1, low: 2 };
+    const sortedIssues = [...kbIssues].sort((a, b) => {
+        const pa = priorityOrder[a.severity] ?? 3;
+        const pb = priorityOrder[b.severity] ?? 3;
+        return pa - pb;
+    });
 
-    container.innerHTML = reversedIssues.slice(0, 50).map(issue => {
+    container.innerHTML = sortedIssues.slice(0, 50).map(issue => {
         const severityClass = `severity-${issue.severity}`;
         return `
             <div class="kb-article ${severityClass}">
@@ -1093,10 +1103,14 @@ function renderKbArticles(matchedIssues) {
         return;
     }
 
-    // Reverse order - show latest (highest line number) first
-    const reversedIssues = [...kbIssues].sort((a, b) => b.line - a.line);
+    const priorityOrder = { high: 0, medium: 1, low: 2 };
+    const sortedIssues = [...kbIssues].sort((a, b) => {
+        const pa = priorityOrder[a.severity] ?? 3;
+        const pb = priorityOrder[b.severity] ?? 3;
+        return pa - pb;
+    });
 
-    container.innerHTML = reversedIssues.slice(0, 50).map(issue => {
+    container.innerHTML = sortedIssues.slice(0, 50).map(issue => {
         const severityClass = `severity-${issue.severity}`;
         return `
             <div class="kb-article ${severityClass}">
