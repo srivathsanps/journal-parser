@@ -222,26 +222,42 @@ class JournalParser:
         # FIXED: Extract ONLY clean model filenames, no paths or technical data
         models = set()
         model_matches = []
-        
+
+        def _clean_rvt_name(raw_name):
+            """Extract just the .rvt filename from a potentially long captured string."""
+            raw_name = raw_name.strip()
+            # If it's already a clean filename (no spaces or special journal chars), return it
+            if len(raw_name) <= 150 and raw_name == raw_name.strip():
+                # Extract the last segment that looks like a valid filename
+                # Valid Revit filenames: alphanumeric, hyphens, underscores, dots, spaces
+                match = re.search(r'([\w][\w\-\.\s]*\.rvt)$', raw_name, re.IGNORECASE)
+                if match:
+                    return match.group(1).strip()
+            return None
+
         # Pattern 1: Jrn.Data "File Name" - extract just the filename
-        for m in re.finditer(r'Jrn\.Data\s+"File Name"\s*,\s*"[^"]*?([^\\\/]+\.rvt)"', content, re.IGNORECASE):
-            model_name = m.group(1).strip()
+        for m in re.finditer(r'Jrn\.Data\s+"File Name"\s*,\s*"([^"]*\.rvt)"', content, re.IGNORECASE):
+            raw = m.group(1)
+            # Extract just the filename from the path
+            filename = raw.split('\\')[-1].split('/')[-1].strip()
+            model_name = _clean_rvt_name(filename)
             if model_name and model_name.lower().endswith('.rvt'):
-                # Skip if it looks like a temp file (all hex digits)
                 if not re.match(r'^[0-9a-f]{32,}', model_name.replace('.rvt', '').replace('-', '')):
                     models.add(model_name)
                     model_matches.append((m.start(), model_name))
-        
+
         # Pattern 2: Cloud models (BIM 360/ACC) - extract just filename
         for m in re.finditer(r'BIM 360://[^/]+/([^\\\/"]+\.rvt)', content, re.IGNORECASE):
             model_name = m.group(1).strip()
             if model_name:
                 models.add(model_name)
                 model_matches.append((m.start(), model_name))
-        
+
         # Pattern 3: File open command - extract just filename
-        for m in re.finditer(r'ID_REVIT_FILE_OPEN[^"]*"[^"]*?([^\\\/]+\.rvt)"', content, re.IGNORECASE):
-            model_name = m.group(1).strip()
+        for m in re.finditer(r'ID_REVIT_FILE_OPEN[^"]*"([^"]*\.rvt)"', content, re.IGNORECASE):
+            raw = m.group(1)
+            filename = raw.split('\\')[-1].split('/')[-1].strip()
+            model_name = _clean_rvt_name(filename)
             if model_name and model_name.lower().endswith('.rvt'):
                 if not re.match(r'^[0-9a-f]{32,}', model_name.replace('.rvt', '').replace('-', '')):
                     models.add(model_name)
@@ -687,10 +703,10 @@ class JournalParser:
             elif 'ID_REVIT_FILE_OPEN' in upper or 'ID_REVIT_FILE_SAVE' in upper:
                 workflow['file_operations'].append(entry)
 
-            # Link operations
+            # Link operations - only specific link commands, not every line mentioning links
             if 'OPENLINK' in upper or 'LOAD LINKED FILE' in upper:
                 workflow['link_operations'].append(entry)
-            elif '.RVT' in upper and 'LINK' in upper:
+            elif 'ID_RVTDOC_LINK' in upper or 'MANAGE LINKS' in upper:
                 workflow['link_operations'].append(entry)
 
             # Export operations

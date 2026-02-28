@@ -514,8 +514,10 @@ function renderSessionInfo(session, fullData) {
     console.log('Models opened:', session.models_opened);
     console.log('Primary model:', session.primary_model);
 
-    // Filter to only .rvt files
-    const rvtModels = (session.models_opened || []).filter(m => m.toLowerCase().endsWith('.rvt'));
+    // Filter to only clean .rvt filenames (reject raw journal text that ends with .rvt)
+    const rvtModels = (session.models_opened || []).filter(m =>
+        m.toLowerCase().endsWith('.rvt') && m.length <= 150 && !m.includes('::') && !m.includes('0:<')
+    );
 
     if (rvtModels.length > 0) {
         modelsSection.classList.remove('hidden');
@@ -606,9 +608,9 @@ function renderSessionInfo(session, fullData) {
         unsavedWorkSection.classList.add('hidden');
     }
 
-    // Model Details Section (wrap primary, all models, linked models)
+    // Model Details Section (show only if there are .rvt models)
     const modelDetailsSection = document.getElementById('model-details-section');
-    if (session.primary_model || (session.models_opened && session.models_opened.length > 0) || (session.linked_models && session.linked_models.length > 0)) {
+    if (session.primary_model || rvtModels.length > 0) {
         modelDetailsSection.classList.remove('hidden');
     } else {
         modelDetailsSection.classList.add('hidden');
