@@ -2,10 +2,7 @@
 Revit Journal Analyzer - Flask Web Application
 Analyzes Revit journal files for crash diagnosis, errors, and performance issues.
 """
-# testing branch protection
-# testing branch protection
-# testing branch protection
-# testing branch protection
+
 import os
 from pathlib import Path
 from flask import Flask, request, jsonify, render_template, Response
@@ -13,19 +10,58 @@ from flask import Flask, request, jsonify, render_template, Response
 from parser import JournalParser, parse_journal
 from pdf_generator import generate_pdf
 
-app = Flask(__name__)
-# No file size limit - journal files can be large
+# Azure Blob Storage
+from azure.storage.blob import BlobServiceClient
 
-# Disable caching during development to ensure JavaScript updates are loaded
+app = Flask(__name__)
+
+# -----------------------------
+# AZURE BLOB STORAGE SETUP
+# -----------------------------
+connection_string = os.getenv("AZURE_STORAGE_CONNECTION_STRING")
+
+blob_service_client = None
+container_client = None
+
+if connection_string:
+    try:
+        blob_service_client = BlobServiceClient.from_connection_string(connection_string)
+        container_client = blob_service_client.get_container_client("demo-files")
+        print("✅ Azure Blob Storage connected")
+    except Exception as e:
+        print(f"⚠️ Azure Blob connection failed: {e}")
+else:
+    print("⚠️ No Azure storage connection string found")
+
+
+def upload_to_blob(file_bytes, filename):
+    """Upload file to Azure Blob Storage."""
+    if not container_client:
+        return
+
+    try:
+        blob_client = container_client.get_blob_client(filename)
+        blob_client.upload_blob(file_bytes, overwrite=True)
+        print(f"☁️ Uploaded to Azure Blob: {filename}")
+    except Exception as e:
+        print(f"Azure upload failed: {e}")
+
+
+# -----------------------------
+# DISABLE CACHE DURING DEV
+# -----------------------------
 @app.after_request
 def add_header(response):
     """Add headers to prevent caching during development."""
-    response.headers['Cache-Control'] = 'no-store, no-cache, must-revalidate, post-check=0, pre-check=0, max-age=0'
+    response.headers['Cache-Control'] = 'no-store, no-cache, must-revalidate, max-age=0'
     response.headers['Pragma'] = 'no-cache'
     response.headers['Expires'] = '-1'
     return response
 
-# Initialize parser with XML patterns
+
+# -----------------------------
+# JOURNAL PARSER INIT
+# -----------------------------
 XML_PATTERN_FILE = Path(__file__).parent / "Search_v8_b.xml"
 parser = JournalParser(str(XML_PATTERN_FILE) if XML_PATTERN_FILE.exists() else None)
 
@@ -53,25 +89,28 @@ def upload():
     if not file.filename:
         return jsonify({"error": "No file selected"}), 400
 
-    # Check file extension
     allowed_extensions = {'.txt', '.log', '.journal'}
     ext = Path(file.filename).suffix.lower()
+
     if ext not in allowed_extensions:
         return jsonify({
             "error": f"Invalid file type. Allowed: {', '.join(allowed_extensions)}"
         }), 400
 
     try:
-        # Read and decode file content
-        content = file.read().decode("utf-8", errors="ignore")
+        file_bytes = file.read()
 
-        if not content.strip():
+        if not file_bytes.strip():
             return jsonify({"error": "File is empty"}), 400
 
-        # Parse the journal file
+        # Upload original file to Azure
+        upload_to_blob(file_bytes, file.filename)
+
+        # Decode for parsing
+        content = file_bytes.decode("utf-8", errors="ignore")
+
         result = parser.parse(content)
 
-        # Add filename to result
         result['filename'] = file.filename
 
         return jsonify(result)
@@ -93,10 +132,8 @@ def generate_pdf_report():
         if not data:
             return jsonify({"error": "No data provided"}), 400
 
-        # Generate PDF
         pdf_bytes = generate_pdf(data)
 
-        # Create response with PDF
         filename = data.get('filename', 'journal_analysis')
         if filename.endswith('.txt'):
             filename = filename[:-4]
@@ -134,13 +171,11 @@ def health():
 # -----------------------------
 @app.errorhandler(413)
 def too_large(e):
-    """Handle file too large error (if server has limits)."""
     return jsonify({"error": "File too large for server to process."}), 413
 
 
 @app.errorhandler(500)
 def server_error(e):
-    """Handle server errors."""
     return jsonify({"error": "Internal server error"}), 500
 
 
@@ -148,7 +183,7 @@ def server_error(e):
 # RUN SERVER
 # -----------------------------
 if __name__ == "__main__":
-    # Enable debug mode for development
+
     debug_mode = os.environ.get('FLASK_DEBUG', 'true').lower() == 'true'
     port = int(os.environ.get('PORT', 5001))
 
@@ -156,11 +191,12 @@ if __name__ == "__main__":
     print("🚀 Revit Journal Analyzer - Server Starting")
     print("=" * 60)
     print(f"📊 Patterns loaded: {len(parser.patterns)}")
-    print(f"\n🌐 Access the application at:")
-    print(f"   • Local:   http://localhost:{port}")
-    print(f"   • Network: http://10.10.40.201:{port}")
-    print(f"\n⚠️  Make sure Windows Firewall allows port {port}")
+
+    if connection_string:
+        print("☁️ Azure Blob Storage ENABLED")
+    else:
+        print("⚠️ Azure Blob Storage DISABLED")
+
     print("=" * 60)
 
     app.run(debug=debug_mode, host='0.0.0.0', port=port)
-    # This is our new line
