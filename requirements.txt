@@ -6,6 +6,9 @@ Flask>=2.3.0
 # PDF Generation
 reportlab>=4.0.0
 
+# Azure Storage
+azure-storage-blob>=12.19.0
+
 # Optional: For production deployment
 gunicorn>=21.0.0;platform_system!="Windows"
 waitress>=2.1.0;platform_system=="Windows"
