@@ -61,18 +61,19 @@ jobs:
           app-name: journalparser-sriv
           slot-name: Production
 
-      # SUCCESS MESSAGE
-      - name: Notify Teams - Success
-        if: success()
-        run: |
-          curl -H "Content-Type: application/json" \
-          -d '{"text":"Production change triggered\nPayload injected across global nodes 🌐\nServer response → STABLE 🟢\nDeployment status → LIVE 🚀\nNode handshake confirmed 🤝 → DevOps Commander"}' \
-          ${{ secrets.TEAMS_WEBHOOK }}
+      # -----------------------------
+      # TEAMS NOTIFICATION
+      # -----------------------------
 
-      # FAILURE MESSAGE
-      - name: Notify Teams - Failure
-        if: failure()
+      - name: Notify Teams
+        if: always()
         run: |
+          if [ "${{ job.status }}" == "success" ]; then
+            MESSAGE="Production change triggered\nPayload injected across global nodes 🌐\nServer response → STABLE 🟢\nDeployment status → LIVE 🚀\nNode handshake confirmed 🤝 → DevOps Commander"
+          else
+            MESSAGE="❗ PRODUCTION CHANGE TRIGGERED ❗\nPayload injection attempted across global nodes 🛰️\nServer response → ROLLBACK INITIATED 🔁\nDeployment status → FAILED ❌❌❌\nNode handshake interrupted ⚠️"
+          fi
+
           curl -H "Content-Type: application/json" \
-          -d '{"text":"❗ PRODUCTION CHANGE TRIGGERED ❗\nPayload injection attempted across global nodes 🛰️\nServer response → ROLLBACK INITIATED 🔁\nDeployment status → FAILED ❌❌❌\nNode handshake interrupted ⚠️"}' \
+          -d "{\"text\":\"$MESSAGE\"}" \
           ${{ secrets.TEAMS_WEBHOOK }}
