@@ -7,26 +7,28 @@ on:
   workflow_dispatch:
 
 jobs:
+
   build:
     runs-on: ubuntu-latest
     permissions:
       contents: read
 
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout Repository
+        uses: actions/checkout@v4
 
-      - name: Set up Python version
+      - name: Setup Python
         uses: actions/setup-python@v5
         with:
           python-version: '3.11'
 
-      - name: Create and Start virtual environment and Install dependencies
+      - name: Install Dependencies
         run: |
           python -m venv antenv
           source antenv/bin/activate
           pip install -r requirements.txt
 
-      - name: Upload artifact for deployment jobs
+      - name: Upload Artifact
         uses: actions/upload-artifact@v4
         with:
           name: python-app
@@ -42,7 +44,7 @@ jobs:
       contents: read
 
     steps:
-      - name: Download artifact from build job
+      - name: Download Artifact
         uses: actions/download-artifact@v4
         with:
           name: python-app
@@ -56,24 +58,47 @@ jobs:
 
       - name: Deploy to Azure Web App
         uses: azure/webapps-deploy@v3
-        id: deploy-to-webapp
+        id: deploy
         with:
           app-name: journalparser-sriv
           slot-name: Production
 
-      # -----------------------------
-      # TEAMS NOTIFICATION
-      # -----------------------------
+      # --------------------------------
+      # TEAMS SUCCESS MESSAGE
+      # --------------------------------
 
-      - name: Notify Teams
-        if: always()
+      - name: Teams Notification Success
+        if: success()
         run: |
-          if [ "${{ job.status }}" == "success" ]; then
-            MESSAGE="Production change triggered\nPayload injected across global nodes 🌐\nServer response → STABLE 🟢\nDeployment status → LIVE 🚀\nNode handshake confirmed 🤝 → DevOps Commander"
-          else
-            MESSAGE="❗ PRODUCTION CHANGE TRIGGERED ❗\nPayload injection attempted across global nodes 🛰️\nServer response → ROLLBACK INITIATED 🔁\nDeployment status → FAILED ❌❌❌\nNode handshake interrupted ⚠️"
-          fi
-
           curl -H "Content-Type: application/json" \
-          -d "{\"text\":\"$MESSAGE\"}" \
+          -d '{
+          "text": "⚠️ PRODUCTION ENVIRONMENT CHANGES TRIGGERED ⚠️
+
+Payload injected across global nodes 🛰️
+
+Server response → STABLE 🟢🟢🟢🟢
+Deployment status → LIVE 🟢🟢🟢🟢
+
+Node handshake confirmed 🤝 → DevOps Commander"
+          }' \
+          ${{ secrets.TEAMS_WEBHOOK }}
+
+      # --------------------------------
+      # TEAMS FAILURE MESSAGE
+      # --------------------------------
+
+      - name: Teams Notification Failure
+        if: failure()
+        run: |
+          curl -H "Content-Type: application/json" \
+          -d '{
+          "text": "⚠️ PRODUCTION ENVIRONMENT CHANGES TRIGGERED ⚠️
+
+Payload injection attempted across global nodes 🛰️
+
+Server response → ROLLBACK INITIATED 🔁
+Deployment status → FAILED 🔴🔴🔴🔴
+
+Node handshake interrupted ⚠️"
+          }' \
           ${{ secrets.TEAMS_WEBHOOK }}
