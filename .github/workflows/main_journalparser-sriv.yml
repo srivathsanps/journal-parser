@@ -27,11 +27,19 @@ jobs:
       - name: Install dependencies
         run: pip install -r requirements.txt
 
+      # LOGIN TO AZURE
+      - name: Azure Login
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZUREAPPSERVICE_CLIENTID }}
+          tenant-id: ${{ secrets.AZUREAPPSERVICE_TENANTID }}
+          subscription-id: ${{ secrets.AZUREAPPSERVICE_SUBSCRIPTIONID }}
+
+      # DEPLOY TO AZURE
       - name: Deploy to Azure Web App
         uses: azure/webapps-deploy@v2
         with:
           app-name: journalparser-sriv
-          publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
           package: .
 
       # SUCCESS MESSAGE
