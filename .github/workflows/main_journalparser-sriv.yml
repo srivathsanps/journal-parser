@@ -56,7 +56,11 @@ jobs:
           client-id: ${{ secrets.AZUREAPPSERVICE_CLIENTID_8FA8F4A49AC14D7E8A628F36B73BAFAE }}
           tenant-id: ${{ secrets.AZUREAPPSERVICE_TENANTID_3BE6252710C14E409C6E488D116C6F4F }}
           subscription-id: ${{ secrets.AZUREAPPSERVICE_SUBSCRIPTIONID_C5E0D4B306A34AA3BE4BB56ADE41A7DD }}
+- name: Test Failure
+  run: exit 1
 
+- name: Deploy to Azure Web App
+  uses: azure/webapps-deploy@v3
       - name: Deploy to Azure Web App
         uses: azure/webapps-deploy@v3
         with:
