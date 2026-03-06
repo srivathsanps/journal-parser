@@ -44,6 +44,7 @@ jobs:
       contents: read
 
     steps:
+
       - name: Download Artifact
         uses: actions/download-artifact@v4
         with:
@@ -58,47 +59,22 @@ jobs:
 
       - name: Deploy to Azure Web App
         uses: azure/webapps-deploy@v3
-        id: deploy
         with:
           app-name: journalparser-sriv
           slot-name: Production
 
-      # --------------------------------
-      # TEAMS SUCCESS MESSAGE
-      # --------------------------------
-
+      # SUCCESS MESSAGE
       - name: Teams Notification Success
         if: success()
         run: |
           curl -H "Content-Type: application/json" \
-          -d '{
-          "text": "⚠️ PRODUCTION ENVIRONMENT CHANGES TRIGGERED ⚠️
-
-Payload injected across global nodes 🛰️
-
-Server response → STABLE 🟢🟢🟢🟢
-Deployment status → LIVE 🟢🟢🟢🟢
-
-Node handshake confirmed 🤝 → DevOps Commander"
-          }' \
+          -d '{"text":"⚠️ PRODUCTION ENVIRONMENT CHANGES TRIGGERED ⚠️\n\nPayload injected across global nodes 🛰️\n\nServer response → STABLE 🟢🟢🟢🟢\nDeployment status → LIVE 🟢🟢🟢🟢\n\nNode handshake confirmed 🤝 → DevOps Commander"}' \
           ${{ secrets.TEAMS_WEBHOOK }}
 
-      # --------------------------------
-      # TEAMS FAILURE MESSAGE
-      # --------------------------------
-
+      # FAILURE MESSAGE
       - name: Teams Notification Failure
         if: failure()
         run: |
           curl -H "Content-Type: application/json" \
-          -d '{
-          "text": "⚠️ PRODUCTION ENVIRONMENT CHANGES TRIGGERED ⚠️
-
-Payload injection attempted across global nodes 🛰️
-
-Server response → ROLLBACK INITIATED 🔁
-Deployment status → FAILED 🔴🔴🔴🔴
-
-Node handshake interrupted ⚠️"
-          }' \
+          -d '{"text":"⚠️ PRODUCTION ENVIRONMENT CHANGES TRIGGERED ⚠️\n\nPayload injection attempted across global nodes 🛰️\n\nServer response → ROLLBACK INITIATED 🔁\nDeployment status → FAILED 🔴🔴🔴🔴\n\nNode handshake interrupted ⚠️"}' \
           ${{ secrets.TEAMS_WEBHOOK }}
